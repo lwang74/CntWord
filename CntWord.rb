@@ -1,3 +1,6 @@
+Encoding.default_internal = "utf-8"
+# Encoding.default_external = "gbk"
+
 require 'yaml'
 require './word'
 require 'fileutils'
@@ -6,8 +9,8 @@ class Summary
 	attr :all
 	def initialize cfg
 		@cfg = cfg
-		doc = DocTable.new(@cfg['worddoc'])
-		@all = {}
+		doc = DocTable.new
+		@all = []
 		Dir["**/*.doc"].each{|one|
 			if File.file?(one)
 				if one =~ /\/([^\/~]+\.docx?)$/i
@@ -19,12 +22,9 @@ class Summary
 					if result
 						result['file_name'] = file_name
 						result['file_path'] = file_path
-						ord = result[@cfg['output']['order']]
-						ord='' if !ord
-						@all[ord] ||= []
-						@all[ord] << result
+						@all << result
 					else
-						puts "'#{one}' ¸ñÊ½´íÎó£¡£¡£¡Çë¼ì²é"
+						puts "'#{one}' æœ‰é”™è¯¯"
 					end
 				end
 			end
@@ -36,40 +36,32 @@ class Summary
 	def out file
 		puts "*** Output ***"
 		File.open(file, 'w'){|fout|
-			fout.puts @cfg['output']['cols'].join(',')
-			#~ @all.each{|k, v|
-				#~ puts "key=>#{k};value=>#{v}"
-			#~ }
-			@all.sort.each{|cat_k, cat_v|
-				puts cat_k
-				cat_v.each{|one|
-					line = []
-					@cfg['output']['cols'].each{|col|
-						line << one[col]
-					}
-					fout.puts line.join(',')
+			if @all.size>0
+				fout.puts @all[0].map{|k, v| k}.join(',') 
+				@all.each{|one|
+					fout.puts one.values.join(',')
 				}
-			}
+			end
 		}
 		rescue Exception => detail
-			puts "ÇëÏÈ¹Ø±Õ'#{file}'!"
+			puts "å…ˆå…³é—­#{file}'!"
 			puts detail
 	end
 	
 	def rename
-		puts "*** ÎÄ¼þ¸ÄÃû ***"
+		puts "*** ÃŽÃ„Â¼Ã¾Â¸Ã„ÃƒÃ» ***"
 		@all.each{|kemu, value|
 			value.each{|one|
-				puts one['ÐÕÃû']
+				puts one['ÃÃ•ÃƒÃ»']
 				if one['file_path']=~/(.+\\).+(\..+)$/i
 					path=$1
 					ext=$2
 					#~ puts path
 					src=one['file_path']
-					dst="#{path}#{one['ÐÕÃû']}#{ext}"
+					dst="#{path}#{one['ÃÃ•ÃƒÃ»']}#{ext}"
 					FileUtils.mv src, dst if src!=dst 
 				else
-					puts "Â·¾¶ÃûÓÐ´í:'#{one['file_path']}'!"
+					puts "Ã‚Â·Â¾Â¶ÃƒÃ»Ã“ÃÂ´Ã­:'#{one['file_path']}'!"
 				end
 			}
 		}
@@ -77,49 +69,63 @@ class Summary
 	
 	protected
 	def date_chk dt
-		if dt =~ /^(\d{2,4})([\.,\-]|£®|¡¢|Äê)(\d{1,2})([\.,\-]|£®|¡¢|ÔÂ)?(\d{1,2})?$/
-			"#{$1}Äê#{$3}ÔÂ"
+		if dt =~ /^(\d{2,4})([\.,\-]|Â£Â®|Â¡Â¢|Ã„Ãª)(\d{1,2})([\.,\-]|Â£Â®|Â¡Â¢|Ã”Ã‚)?(\d{1,2})?$/
+			"#{$1}Ã„Ãª#{$3}Ã”Ã‚"
 		else
 			"=>#{dt}"
 		end
 	end	
 	
 	def work_age dt
-		if dt =~ /^(\d+)(Äê)?$/
-			"#{$1}Äê"
+		if dt =~ /^(\d+)(Ã„Ãª)?$/
+			"#{$1}Ã„Ãª"
 		else
 			"=>#{dt}"
 		end
 	end	
 end
 
-#~ cfg = YAML::load_file('config.yml')
-#~ sum = Summary.new(cfg)
-#~ sum.out 'Total.csv'
+def main
+	doc = DocTable.new
+
+	detect = YAML::load_file('detect.yml')
+	sum = Summary.new(detect)
+	sum.out 'Total.csv'
 #~ sum.rename
 
-Dir["**/*.doc"].each{|one|
-	if File.file?(one)
-		if one =~ /\/([^\/~]+\.docx?)$/i
-			file_name = $1
-			puts file_name
-			STDOUT.flush
-			file_path="#{Dir.pwd}\\#{one}".gsub(/\//, "\\")
-			result = doc.get_content(file_path)
-			#~ if result
-				#~ result['file_name'] = file_name
-				#~ result['file_path'] = file_path
-				#~ ord = result[@cfg['output']['order']]
-				#~ ord='' if !ord
-				#~ @all[ord] ||= []
-				#~ @all[ord] << result
-			#~ else
-				#~ puts "'#{one}' ¸ñÊ½´íÎó£¡£¡£¡Çë¼ì²é"
-			#~ end
-		end
-	end
-}
 
+	# Dir["**/*.doc"].each{|one|
+	# 	if File.file?(one)
+	# 		if one =~ /\/([^\/~]+\.docx?)$/i
+	# 			file_name = $1
+	# 			puts file_name
+	# 			STDOUT.flush
+	# 			file_path="#{Dir.pwd}\\#{one}".gsub(/\//, "\\")
+	# 			result = doc.get_content(file_path)
+	# 			if result
+	# 				result['file_name'] = file_name
+	# 				result['file_path'] = file_path
+	# 			else
+	# 				puts "'#{one}' æœ‰é”™è¯¯"
+	# 			end
+	# 			p result
+	# 		end
+	# 	end
+	# }
+
+end
+
+if ARGV.size==0 #è¯»ç»“æžœå¹¶å†™å…¥CSVæ–‡ä»¶
+	main
+elsif ARGV.size==1	#ä»Žæ¨¡æ¿å–detect
+	#read template
+	doc = DocTable.new
+	doc.count_temp("#{Dir.pwd}\\#{ARGV[0]}".gsub(/\//, "\\"))
+	doc.close
+	puts "Write 'detect.yml' OK!"
+else
+	puts "Usageï¼šCntWord.exe [Temp.doc]!"
+end
 
 
 

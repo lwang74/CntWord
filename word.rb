@@ -2,76 +2,57 @@ require 'win32ole'
 require 'yaml'
 
 class DocTable
-	def initialize points
-		@points = points
+	def initialize
 		@word = WIN32OLE.new('Word.Application')
+	end
+
+	def count_temp temp_file
+		@temp = @word.Documents.open(temp_file, 'ReadOnly' => true)
+		
+		all = {}
+		# p @temp.tables.count
+		table_cnt=1
+		@temp.tables.each{|tb|
+			# p tb.range.rows.count
+			# p tb.range.columns.count
+
+			(1..tb.rows.count).each{|row|
+				(1..tb.columns.count).each{|col|
+					begin
+						# puts "#{row}x#{col} #{tb.cell(row, col).range.text}"
+						if /\[(.+)\]/=~tb.cell(row, col).range.text
+							name = $1
+							# puts "#{row}x#{col} #{name}"
+							all[name] = [table_cnt, row, col]
+						end
+					rescue Exception => e
+						# puts "#{row}x#{col} NULL!}"
+					end
+				}
+			}
+			table_cnt +=1
+		}
+		@temp.close
+
+		open("detect.yml","w") do |f|
+			YAML.dump({worddoc: {table: all}}, f)
+		end
 	end
 	
 	def get_content doc_file
+		detect = YAML::load_file('detect.yml')
+
 		@doc = @word.Documents.open(doc_file, 'ReadOnly' => true)
-		@doc.tables.each{|tb|
-			#~ (1..tb.rows.count).each{|ri|
-				#~ (1..tb.columns.count).each{|ci|
-					#~ puts tb.cell(ri, ci).range.text
-				#~ }
-			#~ }
-			tb.rows.each(){|r|
-			}
-			
-			#~ }
-			#~ .item{|row|
-				#~ p row
-			#~ }
-			#~ .each{|row|
-				#~ p row
-			#~ }
-		}
+		
 		result = {}
-		#~ @points['table'].each{|key, val|
-			#~ p key
-			#~ p val
-			#~ begin
-			#~ tb = @doc.tables(val[0])
-			#~ result[key] = trim(tb.cell(val[1], val[2]).range.text)
-			#~ if val[3]
-				#~ re = Regexp.new(val[3])
-				#~ re =~ result[key]
-				#~ result[key] = $1
-			#~ end
-			#~ ##~ puts result[key]
-			#~ ##~ p result[key]
-			#~ rescue Exception => detail
-			#~ puts ">>> #{detail} <<<"
-			#~ puts "#{key}->#{val}"
-			#~ end
-		#~ }
-		
-		#~ @points['para'].each{|key, val|
-			#~ para_cnt = val[0].to_i
-			#~ result[key] = ''
-			#~ cnt =100
-			#~ while cnt>0
-				#~ startPara = trim(@doc.Paragraphs(para_cnt).range.text)
-			##puts startPara
-			#~ if val[1] and Regexp.new(val[1]) =~ startPara
-			  #~ result[key] = $1
-			  #~ break
-			#~ end
-			#~ para_cnt+=1
-			#~ cnt-=1
-		      #~ end
-			##puts result[key]
-		#~ }		
+		detect[:worddoc][:table].each{|name, value|
+			# p name
+			# p value
+			result[name] = trim(@doc.tables(value[0]).cell(value[1], value[2]).range.text)
+		}
+
 		@doc.close
-		
-		@points['const'].each{|key, val|
-			result[key] = val
-		}		
-		#~ result
-		
-		#~ rescue Exception => detail
-		#~ puts ">>>#{detail}"
-		#~ nil
+		result
 	end
 	
 	def close
@@ -91,11 +72,14 @@ def dump result
 end
 
 if __FILE__==$0
-	all = YAML::load_file('config.yml')
-	doc = DocTable.new(all['worddoc'])
-	
-	puts result = doc.get_content("E:\\Lyx\\CntWord\\temp.doc")
-	
+	#read template
+	# doc = DocTable.new
+	# doc.count_temp("F:\\82_lwang\\CntWord\\CntWord\\temp.doc")
+	# doc.close
+
+	#write result
+	doc = DocTable.new
+	p doc.get_content("F:\\82_lwang\\CntWord\\CntWord\\论文\\孟蕊.doc")
 	doc.close
 end
 
