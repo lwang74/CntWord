@@ -2,7 +2,7 @@ Encoding.default_internal = "utf-8"
 # Encoding.default_external = "gbk"
 
 require 'yaml'
-require './word'
+require_relative 'word'
 require 'fileutils'
 
 class Summary
