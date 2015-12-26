@@ -1,9 +1,11 @@
+# encoding: UTF-8
 Encoding.default_internal = "utf-8"
 # Encoding.default_external = "gbk"
 
 require 'yaml'
 require_relative 'word'
 require 'fileutils'
+
 
 class Summary
 	attr :all
@@ -17,7 +19,7 @@ class Summary
 					file_name = $1
 					puts file_name
 					STDOUT.flush
-					file_path="#{Dir.pwd}\\#{one}".gsub(/\//, "\\")
+					file_path="#{Dir.pwd.encode(Encoding.default_internal)}\\#{one}".gsub(/\//, "\\")
 					result = doc.get_content(file_path)
 					if result
 						result['file_name'] = file_name

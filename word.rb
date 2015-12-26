@@ -1,3 +1,7 @@
+# encoding: UTF-8
+Encoding.default_internal = "utf-8"
+# Encoding.default_external = "gbk"
+
 require 'win32ole'
 require 'yaml'
 
@@ -7,6 +11,7 @@ class DocTable
 	end
 
 	def count_temp temp_file
+		# puts temp_file
 		@temp = @word.Documents.open(temp_file, 'ReadOnly' => true)
 		
 		all = {}
@@ -22,8 +27,9 @@ class DocTable
 						# puts "#{row}x#{col} #{tb.cell(row, col).range.text}"
 						if /\[(.+)\]/=~tb.cell(row, col).range.text
 							name = $1
+							puts name
 							# puts "#{row}x#{col} #{name}"
-							all[name] = [table_cnt, row, col]
+							all[name.force_encoding("ASCII-8BIT")] = [table_cnt, row, col]
 						end
 					rescue Exception => e
 						# puts "#{row}x#{col} NULL!}"
@@ -35,6 +41,7 @@ class DocTable
 		@temp.close
 
 		open("detect.yml","w") do |f|
+			# puts all.encoding
 			YAML.dump({worddoc: {table: all}}, f)
 		end
 	end
@@ -48,7 +55,8 @@ class DocTable
 		detect[:worddoc][:table].each{|name, value|
 			# p name
 			# p value
-			result[name] = trim(@doc.tables(value[0]).cell(value[1], value[2]).range.text)
+			name1 = name.to_s.dup.force_encoding('utf-8')
+			result[name1] = trim(@doc.tables(value[0]).cell(value[1], value[2]).range.text)
 		}
 
 		@doc.close
