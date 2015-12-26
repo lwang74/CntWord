@@ -13,7 +13,7 @@ class Summary
 		@cfg = cfg
 		doc = DocTable.new
 		@all = []
-		Dir["**/*.doc"].each{|one|
+		Dir["**/*.doc*"].each{|one|
 			if File.file?(one)
 				if one =~ /\/([^\/~]+\.docx?)$/i
 					file_name = $1
